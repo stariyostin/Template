@@ -11,9 +11,13 @@
             <RowDefinition></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
         <Label>Саша 18 лет</Label>
         <Button Grid.Row="1" Content="Import" Click="btnImport"></Button>
         <Button Grid.Row="2" Content="Export" Click="btnExport"></Button>
+        <Button Grid.Row="3" Content="ImportJSON" Click="btnJson"></Button>
+        <Button Grid.Row="4" Content="ExportWord" Click="btnExportW"></Button>
     </Grid>
 </Window>

@@ -15,6 +15,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Excel = Microsoft.Office.Interop.Excel;
+using System.Text.Json;
+using Word = Microsoft.Office.Interop.Word;
 
 namespace Template_4333
 {
@@ -133,6 +135,147 @@ namespace Template_4333
                 worksheet.Columns.AutoFit();
             }
             app.Visible = true;
+        }
+
+        class Person
+        {
+            public int Id { get; set; }
+            public string FullName { get; set; }
+            public string CodeClient { get; set; }
+            public string BirthDate { get; set; }
+            public string Index { get; set; }
+            public string City { get; set; }
+            public string Street { get; set; }
+            public int Home { get; set; }
+            public int Kvartira { get; set; }
+            public string E_mail { get; set; }
+        }
+
+        private async void btnJson(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog()
+            {
+                DefaultExt = "*.json",
+                Filter = "файл Json |*.json",
+                Title = "Выберите файл"
+            };
+
+            if (!(ofd.ShowDialog() == true))
+                return;
+
+            List<Person> list;
+
+            using (FileStream fs = new FileStream(ofd.FileName, FileMode.OpenOrCreate))
+            {
+                list = await JsonSerializer.DeserializeAsync<List<Person>>(fs);
+            }
+            using (ISRPO2Entities db = new ISRPO2Entities())
+            {
+                foreach (Person person in list)
+                {
+                    DateTime dateOfBirth = DateTime.Parse(person.BirthDate.ToString());
+                    int age = DateTime.Today.Year - dateOfBirth.Year;
+                    if (dateOfBirth > DateTime.Today.AddYears(-age))
+                        age--;
+
+                    db.TableLaba2.Add(new TableLaba2()
+                    {
+                        ФИО = person.FullName,
+                        Код_клиента = Convert.ToInt32(person.CodeClient),
+                        Дата_рождения = dateOfBirth,
+                        Индекс = Convert.ToInt32(person.Index),
+                        Город = person.City,
+                        Улица = person.Street,
+                        Дом = Convert.ToInt32(person.Home),
+                        Квартира = Convert.ToInt32(person.Kvartira),
+                        E_mail = person.E_mail,
+                        Возраст = age,
+                    });
+
+                }
+                db.SaveChanges();
+            }
+        }
+
+        private void btnExportW(object sender, RoutedEventArgs e)
+        {
+            List<TableLaba2> people = new List<TableLaba2>();
+            using (ISRPO2Entities db = new ISRPO2Entities())
+            {
+                people = db.TableLaba2.ToList();
+                var app = new Word.Application();
+                Word.Document document = app.Documents.Add();
+
+                List<TableLaba2> category_1;
+                List<TableLaba2> category_2;
+                List<TableLaba2> category_3;
+
+                using (ISRPO2Entities isrpoEntities = new ISRPO2Entities())
+                {
+                    category_1 = isrpoEntities.TableLaba2.Where(x => x.Возраст >= 20 && x.Возраст <= 29).ToList();
+                    category_2 = isrpoEntities.TableLaba2.Where(x => x.Возраст >= 30 && x.Возраст <= 39).ToList();
+                    category_3 = isrpoEntities.TableLaba2.Where(x => x.Возраст >= 40).ToList();
+                }
+
+                var allCategories = new List<List<TableLaba2>>()
+                {
+                    category_1,
+                    category_2,
+                    category_3
+                };
+                int i = 1;
+                foreach (var category in allCategories)
+                {
+                    Word.Paragraph paragraph = document.Paragraphs.Add();
+                    Word.Range range = paragraph.Range;
+                    range.Text = "Категория " + i;
+                    i++;
+                    paragraph.set_Style("Заголовок 1");
+                    range.InsertParagraphAfter();
+
+                    Word.Paragraph tableParagraph = document.Paragraphs.Add();
+                    Word.Range tableRange = tableParagraph.Range;
+                    Word.Table peopleTable = document.Tables.Add(tableRange, category.Count() + 1, 3);
+                    peopleTable.Borders.InsideLineStyle = peopleTable.Borders.OutsideLineStyle = Word.WdLineStyle.wdLineStyleSingle;
+                    peopleTable.Range.Cells.VerticalAlignment = Word.WdCellVerticalAlignment.wdCellAlignVerticalCenter;
+
+                    Word.Range cellRange;
+                    cellRange = peopleTable.Cell(1, 1).Range;
+                    cellRange.Text = "Код клиента";
+                    cellRange = peopleTable.Cell(1, 2).Range;
+                    cellRange.Text = "ФИО";
+                    cellRange = peopleTable.Cell(1, 3).Range;
+                    cellRange.Text = "E-mail";
+                    peopleTable.Rows[1].Range.Bold = 1;
+                    peopleTable.Rows[1].Range.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphCenter;
+
+                    int j = 1;
+                    foreach (var person in category)
+                    {
+                        cellRange = peopleTable.Cell(j + 1, 1).Range;
+                        cellRange.Text = person.Код_клиента.ToString();
+                        cellRange.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphCenter;
+                        cellRange = peopleTable.Cell(j + 1, 2).Range;
+                        cellRange.Text = person.ФИО;
+                        cellRange.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphCenter;
+                        cellRange = peopleTable.Cell(j + 1, 3).Range;
+                        cellRange.Text = person.E_mail;
+                        cellRange.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphCenter;
+                        j++;
+                    }
+
+                    Word.Paragraph countPeopleParagraph = document.Paragraphs.Add();
+                    Word.Range countPeopleRange = countPeopleParagraph.Range;
+                    countPeopleRange.Text = $"Количество людей в категории - {category.Count()}";
+                    countPeopleRange.Font.Color = Word.WdColor.wdColorRed;
+                    countPeopleRange.InsertParagraphAfter();
+
+                    document.Words.Last.InsertBreak(Word.WdBreakType.wdPageBreak);
+                }
+                app.Visible = true;
+                document.SaveAs2(@"D:\outputFileWord.docx");
+                document.SaveAs2(@"D:\outputFilePdf.pdf", Word.WdExportFormat.wdExportFormatPDF);
+            }
         }
     }
 }
