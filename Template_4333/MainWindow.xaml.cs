@@ -63,5 +63,12 @@ namespace Template_4333
             ibragimov.Show();
             this.Hide();
         }
+
+        private void Sasha_Click(object sender, RoutedEventArgs e)
+        {
+            var page = new _4333_Starostin();
+            page.Show();
+            this.Hide();
+        }
     }
 }

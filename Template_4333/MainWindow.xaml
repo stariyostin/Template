@@ -35,6 +35,7 @@
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
         </Grid.RowDefinitions>
+        <Button Grid.Row="6" Content="Автор изменений" Width="150" Foreground="White" Background="Purple" Click="Sasha_Click"></Button>
 		<Button Grid.Row="5" Content="Автор изменений" Width="150" Foreground="White" Background="Blue" Click="Amir_Click"/>
         <Button Grid.Row="1" Content="Автор изменений" Width="150" Foreground="White" Background="Black" Click="Button_Click"/>
         <Button Grid.Row="14" Content="Автор изменений" Width="150" Foreground="White" Background="LightPink" Click="Dina_Click"/>
