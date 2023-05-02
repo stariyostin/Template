@@ -273,8 +273,8 @@ namespace Template_4333
                     document.Words.Last.InsertBreak(Word.WdBreakType.wdPageBreak);
                 }
                 app.Visible = true;
-                document.SaveAs2(@"D:\outputFileWord.docx");
-                document.SaveAs2(@"D:\outputFilePdf.pdf", Word.WdExportFormat.wdExportFormatPDF);
+                document.SaveAs2(@"C:\Users\sasha\Desktop\ISRPO3\outputFileWord.docx");
+                document.SaveAs2(@"C:\Users\sasha\Desktop\ISRPO3\outputFilePdf.pdf", Word.WdExportFormat.wdExportFormatPDF);
             }
         }
     }
